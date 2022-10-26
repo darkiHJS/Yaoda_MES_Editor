@@ -5,7 +5,17 @@ export default defineConfig({
     type: 'none',
   },
   routes: [
-    { path: '/', component: '@/pages/index' },
+    {
+      path: '/',
+      component: '@/layout/index',
+      routes: [
+        {
+          path: '/',
+          name: '欢迎页',
+          component: '@/pages/index',
+        },
+      ],
+    },
   ],
   fastRefresh: {},
 });
