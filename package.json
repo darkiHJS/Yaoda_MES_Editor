@@ -22,7 +22,7 @@
   "dependencies": {
     "@ant-design/pro-layout": "^6.5.0",
     "@umijs/hooks": "^1.9.3",
-    "highlight.js": "^11.6.0",
+    "prismjs": "^1.29.0",
     "react": "17.x",
     "react-dom": "17.x",
     "umi": "^3.5.35"
@@ -32,6 +32,7 @@
     "@types/react-dom": "^17.0.0",
     "@umijs/preset-react": "1.x",
     "@umijs/test": "^3.5.35",
+    "babel-plugin-prismjs": "^2.1.0",
     "lint-staged": "^10.0.7",
     "prettier": "^2.2.0",
     "typescript": "^4.1.2",

@@ -2,8 +2,7 @@ import React, { useState, useEffect, useReducer, useRef } from 'react';
 import { Card, Col, Row, Input, Form, Button, Space, message } from 'antd';
 import { useRequest } from '@umijs/hooks';
 import { getFreeApi } from '@/services/index';
-import hljs from 'highlight.js';
-import 'highlight.js/styles/vs2015.css';
+import CodeBox from '@/components/CodeBox';
 /**
  * reducer指令集
  */
@@ -19,7 +18,8 @@ interface Action {
 interface State {
   apiUrl?: string;
   tableDataPath?: string;
-  tableDate?: any;
+  tableData?: any;
+  tableConfigForm?: any;
 }
 
 const Index: React.FC = () => {
@@ -29,17 +29,19 @@ const Index: React.FC = () => {
   function reducer(state: State, action: Action): State {
     switch (action.type) {
       case ActionKind.CHANGE:
-        return { ...action.payload };
+        return { ...state, ...action.payload };
       case ActionKind.ADDMETADATA:
-        return { ...state, tableDate: action.payload };
+        return { ...state, tableData: action.payload };
       case ActionKind.ADDAPIURL:
-        return { ...state, tableDate: action.payload };
+        return { ...state, tableData: action.payload };
       default:
         return state;
     }
   }
-  const codeBlock = useRef(null);
-  const [state, dispatch] = useReducer(reducer, {});
+  const [process, setProcess] = useState(0);
+  const [state, dispatch] = useReducer(reducer, {
+    apiUrl: '/api/mock/table',
+  });
   const { data, run } = useRequest(getFreeApi, {
     manual: true,
     onSuccess(res) {
@@ -57,64 +59,98 @@ const Index: React.FC = () => {
     },
   });
 
-  useEffect(() => {
-    hljs.configure({
-      ignoreUnescapedHTML: true,
-    });
-    hljs.highlightAll();
-  }, []);
   return (
     <div style={{ padding: 24 }}>
-      <Card title="页面信息" style={{ marginBottom: 24 }}>
-        <Row justify="start" gutter={24}>
-          <Col>
-            <Space align="baseline">
-              页面数据接口:
-              <Input
-                value={state.apiUrl}
-                onChange={(event) =>
-                  dispatch({
-                    type: ActionKind.CHANGE,
-                    payload: { apiUrl: event.target.value },
-                  })
-                }
-                style={{ width: 320 }}
-              />
+      {process === 0 ? (
+        <>
+          <Card title="页面信息" style={{ marginBottom: 24 }}>
+            <Row justify="start" gutter={24}>
+              <Col>
+                <Space align="baseline">
+                  页面数据接口:
+                  <Input
+                    value={state.apiUrl}
+                    onChange={(event) =>
+                      dispatch({
+                        type: ActionKind.CHANGE,
+                        payload: { apiUrl: event.target.value },
+                      })
+                    }
+                    style={{ width: 320 }}
+                  />
+                  <Button
+                    type="primary"
+                    onClick={() => {
+                      if (state.apiUrl) run(state.apiUrl);
+                      else message.info('必须输入url');
+                    }}
+                  >
+                    调用接口
+                  </Button>
+                </Space>
+              </Col>
+              <Col>
+                <Space align="baseline">
+                  数据定位:
+                  <Input
+                    value={state.tableDataPath}
+                    onChange={(event) => {
+                      const pathMap = event.target.value.split('.');
+                      let metaData: unknown = null;
+                      pathMap.forEach((v) => {
+                        console.log(v);
+                        if (!metaData) {
+                          metaData = data[v] || null;
+                        } else {
+                          metaData = (metaData as any)[v] || metaData;
+                        }
+                      });
+                      dispatch({
+                        type: ActionKind.CHANGE,
+                        payload: {
+                          tableDataPath: event.target.value,
+                          tableData: metaData,
+                        },
+                      });
+                    }}
+                    style={{ width: 320 }}
+                  />
+                </Space>
+              </Col>
+            </Row>
+          </Card>
+          <Card
+            title="接口数据预览"
+            extra={
               <Button
                 type="primary"
                 onClick={() => {
-                  if (state.apiUrl) run(state.apiUrl);
-                  else message.info('必须输入url');
+                  setProcess(1);
                 }}
               >
-                调用接口
+                数据定位完成
               </Button>
-            </Space>
-          </Col>
-          <Col>
-            <Space align="baseline">
-              数据定位:
-              <Input
-                value={state.tableDataPath}
-                onChange={(event) =>
-                  dispatch({
-                    type: ActionKind.CHANGE,
-                    payload: { tableDataPath: event.target.value },
-                  })
-                }
-                style={{ width: 320 }}
+            }
+          >
+            <div>
+              <CodeBox
+                code={JSON.stringify(state.tableData, null, 2)}
+                language="js"
+                plugins={['line-numbers']}
               />
-            </Space>
-          </Col>
-        </Row>
-      </Card>
-      <Card title="页面代码预览">
-        <div className="language-javascript">
-          <pre ref={codeBlock}>
-            <code>{JSON.stringify(data)?.replaceAll(',', ',\n')}</code>
-          </pre>
-        </div>
-      </Card>
+            </div>
+          </Card>
+        </>
+      ) : null}
+      {process === 1 ? (
+        <>
+          <Card title="表单数据编辑">
+            <Form.List name="tableItemConfig">
+              {(fields, { add, remove }) => {}}
+            </Form.List>
+          </Card>
+        </>
+      ) : null}
     </div>
   );
 };
